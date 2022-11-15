@@ -99,7 +99,6 @@ def atom_propagation(x):
 
 def dpll(x):
     check = check_literals(x)
-    print("TEST")
     return random.choice(list(check.keys()))
 
 if __name__ == "__main__":
