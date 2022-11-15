@@ -57,10 +57,9 @@ def to_dimacs(input_file):
             val = int(mat[row][col])
             file_dimacs += f'{row+1}{col+1}{val} 0\n'
         
-        #givens_dimacs.write(f'puzzle_{i}_{size}*{size}')
         print(file_dimacs)  
         
-        # add rules to file 
+        # add cnf rules to dimacs file 
         file_rules = rules.format(size, size)
         
         with open(file_rules, 'r') as file:
@@ -68,7 +67,6 @@ def to_dimacs(input_file):
             
         file_dimacs+=rules_dimacs.split('\n', 1)[1]
             
-        #print(file_dimacs)
         # save each sudoku as dimacs txt files 
         with open(f'sudoku_{size}_{size}_{n}.txt', "w+") as dimacs:
             dimacs.write(file_dimacs)
