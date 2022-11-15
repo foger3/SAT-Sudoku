@@ -1,4 +1,4 @@
-import sys, time, numpy as np
+import sys, time, random, numpy as np
 
 class SolvSAT:
     def __init__(self, dimacs, heuristic):
@@ -29,40 +29,6 @@ class SolvSAT:
             print(np.array([int(str(i)[-1]) for i in Sol]).reshape(9, 9))
         else:
             print("Unsatisfiable!")
-
-# read input from command in format: python SAT.py -Sn Sudoku_name.cnf
-def main():
-    #  Check file parameters
-    if len(sys.argv) != 3:
-        sys.exit("Input parameters as followed: python SAT.py -Sn Sudoku_name.cnf")
-
-    heuristic = sys.argv[1]  # check heuristic
-    if heuristic == "-S1" or "-s1":
-        h = dpll
-        print("Running default DPLL \n")
-    if heuristic == "-S2" or "-s2":
-        pass
-    if heuristic == "-S3" or "-s3":
-        pass
-    else:
-        sys.exit("Input parameters as followed: python SAT.py -Sn Sudoku_name.cnf")
-
-    if sys.argv[2].endswith('.txt'):
-        pass
-    elif sys.argv[2].endswith('.cnf'):
-        sudoku = sys.argv[2]  # check sudoku filename
-
-        txtwrap = open(sudoku, "r")
-        dimacs = txtwrap.readlines()
-        time_start = time.process_time()
-        run = SolvSAT(dimacs, h)
-        run.start()
-        run.results()
-        time_end = time.process_time()
-        duration = time_end - time_start
-        print("\n Duration: {:.8f}".format(duration))
-    else:
-        sys.exit("Sudoku has to be either in .cnf or .txt format")
 
 def backtracks(x, found, heuristic):
     backtracks.count += 1
@@ -133,7 +99,38 @@ def atom_propagation(x):
 
 def dpll(x):
     check = check_literals(x)
-    return max(check, key=check.get)
+    print("TEST")
+    return random.choice(list(check.keys()))
 
 if __name__ == "__main__":
-    main()
+    #  Check file parameters
+    if len(sys.argv) != 3:
+        sys.exit("Input parameters as followed: python SAT.py -Sn Sudoku_name.cnf")
+
+    heuristic = sys.argv[1]  # check heuristic
+    if heuristic == "-S1" or "-s1":
+        h = dpll
+        print("Running default DPLL (random splitting) \n")
+    elif heuristic == "-S2" or "-s2":
+        pass
+    elif heuristic == "-S3" or "-s3":
+        pass
+    else:
+        sys.exit("Input parameters as followed: python SAT.py -Sn Sudoku_name.cnf")
+
+    if sys.argv[2].endswith('.txt'):
+        pass
+    elif sys.argv[2].endswith('.cnf'):
+        sudoku = sys.argv[2]  # check sudoku filename
+
+        txtwrap = open(sudoku, "r")
+        dimacs = txtwrap.readlines()
+        time_start = time.process_time()
+        run = SolvSAT(dimacs, h)
+        run.start()
+        run.results()
+        time_end = time.process_time()
+        duration = time_end - time_start
+        print("\n Duration: {:.8f}".format(duration))
+    else:
+        sys.exit("Sudoku has to be in either .cnf or .txt format")
