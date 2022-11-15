@@ -46,17 +46,23 @@ def main():
         pass
     else:
         sys.exit("Input parameters as followed: python SAT.py -Sn Sudoku_name.cnf")
-    sudoku = sys.argv[2]  # check sudoku filename
 
-    txtwrap = open(sudoku, "r")
-    dimacs = txtwrap.readlines()
-    time_start = time.time()
-    run = SolvSAT(dimacs, h)
-    run.start()
-    run.results()
-    time_end = time.time()
-    duration = time_end - time_start
-    print("\n Duration: {:.8f}".format(duration))
+    if sys.argv[2].endswith('.txt'):
+        pass
+    elif sys.argv[2].endswith('.cnf'):
+        sudoku = sys.argv[2]  # check sudoku filename
+
+        txtwrap = open(sudoku, "r")
+        dimacs = txtwrap.readlines()
+        time_start = time.process_time()
+        run = SolvSAT(dimacs, h)
+        run.start()
+        run.results()
+        time_end = time.process_time()
+        duration = time_end - time_start
+        print("\n Duration: {:.8f}".format(duration))
+    else:
+        sys.exit("Sudoku has to be either in .cnf or .txt format")
 
 def backtracks(x, found, heuristic):
     backtracks.count += 1
@@ -85,7 +91,7 @@ def check_literals(x):
                 amount[literal] = 1
     return amount
 
-def bcp(x, y):
+def bcp(x, y):  # unit clauses
     modified = []
     for clause in x:
         if y in clause:
