@@ -28,6 +28,7 @@ def to_dimacs(input_file):
 
             sudoku_mat[i]= int(ch)
             i+=1
+            print(sudoku_mat)
         
         mat = sudoku_mat.reshape((size, size))
         print('Sudoku grid \n', mat)
@@ -37,16 +38,16 @@ def to_dimacs(input_file):
         
         # first line Dimacs - get sudoku nvars and nclauses
         if size == 4:
-            nclauses = 448
+            nclauses = 130
             nvars = 444
             
         if size == 9:
-            nclauses = 12016
+            nclauses = 11988
             nvars = 999
             
         if size == 16:
-            nclauses = 123904
-            nvars = 5832
+            nclauses = 123908
+            nvars = 4096
             
         nclauses = nclauses + len(givens_cnf) # total clauses with givens
         file_dimacs = f'p cnf {nvars} {nclauses}\n'
@@ -57,9 +58,10 @@ def to_dimacs(input_file):
             val = int(mat[row][col])
             file_dimacs += f'{row+1}{col+1}{val} 0\n'
         
+        #givens_dimacs.write(f'puzzle_{i}_{size}*{size}')
         print(file_dimacs)  
         
-        # add cnf rules to dimacs file 
+        # add rules to file 
         file_rules = rules.format(size, size)
         
         with open(file_rules, 'r') as file:
@@ -67,8 +69,9 @@ def to_dimacs(input_file):
             
         file_dimacs+=rules_dimacs.split('\n', 1)[1]
             
+        #print(file_dimacs)
         # save each sudoku as dimacs txt files 
-        with open(f'sudoku_{size}_{size}_{n}.txt', "w+") as dimacs:
+        with open(f'tests/sudoku_{size}_{size}_{n}.txt', "w+") as dimacs:
             dimacs.write(file_dimacs)
             
         n+=1
@@ -80,3 +83,4 @@ def to_dimacs(input_file):
 
 to_dimacs(path_tests)
 
+# Generic SAT solver
