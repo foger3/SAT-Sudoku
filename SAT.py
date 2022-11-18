@@ -20,6 +20,7 @@ class SolvSAT:
             self.clauses.append(clauses)
 
     def results(self):
+        self.clauses = taut_check(self.clauses)
         backtracks.count = 0
         self.solution = backtracks(self.clauses, [], self.heuristic)
         self.backtracking = backtracks.count
@@ -101,10 +102,24 @@ def dpll(x):
     check = check_literals(x)
     return random.choice(list(check.keys()))
 
+def taut_check(clauselist):
+    updatelist = []
+    match = 0
+    for clause in clauselist:
+        for literal in clause:
+            if -literal in clause:
+                match = 1
+                break
+        if match == 0:
+            updatelist.append(clause)
+        else:
+            match = 0
+    return updatelist
+
 if __name__ == "__main__":
     #  Check file parameters
     if len(sys.argv) != 3:
-        sys.exit("Input parameters as followed: python SAT.py -Sn Sudoku_name.cnf")
+        sys.exit("Input parameters as follows: python SAT.py -Sn Sudoku_name.cnf")
 
     heuristic = sys.argv[1]  # check heuristic
     if heuristic == "-S1" or "-s1":
@@ -115,10 +130,10 @@ if __name__ == "__main__":
     elif heuristic == "-S3" or "-s3":
         pass
     else:
-        sys.exit("Input parameters as followed: python SAT.py -Sn Sudoku_name.cnf")
+        sys.exit("Input parameters as follows: python SAT.py -Sn Sudoku_name.cnf")
 
     if sys.argv[2].endswith('.txt'):
-        pass
+        sys.exit("Input has to be a .cnf file")  # Could be updated to run converter and then solver if time permits
     elif sys.argv[2].endswith('.cnf'):
         sudoku = sys.argv[2]  # check sudoku filename
 
@@ -132,4 +147,4 @@ if __name__ == "__main__":
         duration = time_end - time_start
         print("\n Duration: {:.8f}".format(duration))
     else:
-        sys.exit("Sudoku has to be in either .cnf or .txt format")
+        sys.exit("Sudoku has to be in .cnf format")
