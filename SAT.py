@@ -1,4 +1,4 @@
-import sys, time, random, numpy as np
+import os, sys, time, random, numpy as np
 
 class SolvSAT:
     def __init__(self, dimacs, heuristic):
@@ -26,10 +26,27 @@ class SolvSAT:
         self.backtracking = backtracks.count
         print("# of Backtracks: {}".format(self.backtracking))
         if self.solution:  # rearrange solution in a 9x9 Sudoku grid
-            Sol = [x for x in sorted(self.solution) if x > 0]
-            print(np.array([int(str(i)[-1]) for i in Sol]).reshape(9, 9))
+            sol = [x for x in sorted(self.solution) if x > 0]
+            print(np.array([int(str(i)[-1]) for i in sol]).reshape(9, 9))
         else:
             print("Unsatisfiable!")
+
+    def outfile(self, name):
+        if not len(self.solution):
+            pass
+        else:
+            sol = self.solution
+            filename = name[:-4] + ".out"
+            vars_nums = len(sol)
+            clause_nums = len(sol)
+            write = "p cnf {} {}\n".format(vars_nums, clause_nums)
+            for i in sol:
+                write += "{} 0\n".format(i)
+            exp_file = open(filename, "w")
+            exp_file.write(write)
+            exp_file.close()
+            print("\n Solution written to {}".format(os.path.basename(filename)))
+
 
 def backtracks(x, found, heuristic):
     backtracks.count += 1
@@ -119,7 +136,8 @@ def taut_check(clauselist):
 if __name__ == "__main__":
     #  Check file parameters
     if len(sys.argv) != 3:
-        sys.exit("Input parameters as follows: python SAT.py -Sn Sudoku_name.cnf")
+        sys.exit("Input parameters as follows: python SAT.py -Sn Sudoku_name.cnf \n"
+                 "Or input a whole folder with .cnf files: python SAT.py -Sn -Folder=<foldername>")
 
     heuristic = sys.argv[1]  # check heuristic
     if heuristic == "-S1" or "-s1":
@@ -130,7 +148,8 @@ if __name__ == "__main__":
     elif heuristic == "-S3" or "-s3":
         pass
     else:
-        sys.exit("Input parameters as follows: python SAT.py -Sn Sudoku_name.cnf")
+        sys.exit("Input parameters as follows: python SAT.py -Sn Sudoku_name.cnf \n"
+                 "Or input a whole folder with .cnf files: python SAT.py -Sn -Folder=<foldername>")
 
     if sys.argv[2].endswith('.txt'):
         sys.exit("Input has to be a .cnf file")  # Could be updated to run converter and then solver if time permits
@@ -146,5 +165,23 @@ if __name__ == "__main__":
         time_end = time.process_time()
         duration = time_end - time_start
         print("\n Duration: {:.8f}".format(duration))
+        run.outfile(sudoku)
+    elif sys.argv[2].startswith('-Folder='):
+        directory = (sys.argv[2].split('='))
+        for ind_sudoku in os.listdir(directory[1]):
+            if ind_sudoku.endswith(".cnf"):
+                sudoku = ind_sudoku
+                txtwrap = open(sudoku, "r")
+                dimacs = txtwrap.readlines()
+                time_start = time.process_time()
+                run = SolvSAT(dimacs, h)
+                run.start()
+                run.results()
+                time_end = time.process_time()
+                duration = time_end - time_start
+                print("\n Duration: {:.8f}".format(duration))
+                run.outfile(sudoku)
+            else:
+                sys.exit("No more sudokus with .cnf format found")
     else:
         sys.exit("Sudoku has to be in .cnf format")
