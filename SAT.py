@@ -1,4 +1,4 @@
-import os, sys, time, random, numpy as np
+import os, sys, time, random, csv, numpy as np
 
 class SolvSAT:
     def __init__(self, dimacs, heuristic):
@@ -31,7 +31,7 @@ class SolvSAT:
         else:
             print("Unsatisfiable!")
 
-    def outfile(self, name):
+    def outfile(self, name):  # creates the solution .out file
         if not len(self.solution):
             pass
         else:
@@ -47,6 +47,37 @@ class SolvSAT:
             exp_file.close()
             print("\n Solution written to {}".format(os.path.basename(filename)))
 
+    def outcome(self, name, heur):
+        if heur == "-S1" or "-s1":
+            heurname = "DPLL"
+        elif heur == "-S2" or "-s2":
+            heurname = "Unknown"
+        elif heur == "-S2" or "-s2":
+            heurname = "Unknown"
+
+        if sys.argv[2].endswith('.cnf') or sys.argv[2].endswith('.txt'):
+            rfile_name = (str(name) + "_" + heurname + "_" + "results" + ".csv")
+
+        if sys.argv[2].startswith('-Folder='):
+            rfile_name = (str(directory[1]) + "_" + heurname + "_" + "results" + ".csv")
+
+        resdict = {
+            'filename': name,
+            'heuristic': heurname,
+            'duration': duration,
+            'backtracks': self.backtracking
+        }
+
+        if not os.path.exists(rfile_name):
+            res_file = open(rfile_name, "w")
+            csv_writer = csv.DictWriter(res_file, fieldnames=resdict.keys(), dialect='excel')
+            csv_writer.writeheader()
+            res_file.close()
+
+        csv_handle = open(rfile_name, "a")
+        csv_writer = csv.DictWriter(csv_handle, fieldnames=resdict.keys(), dialect='excel')
+        csv_writer.writerow(resdict)
+        print("\n Results written to {}".format(os.path.basename(rfile_name)))
 
 def backtracks(x, found, heuristic):
     backtracks.count += 1
@@ -151,9 +182,7 @@ if __name__ == "__main__":
         sys.exit("Input parameters as follows: python SAT.py -Sn Sudoku_name.cnf \n"
                  "Or input a whole folder with .cnf files: python SAT.py -Sn -Folder=<foldername>")
 
-    if sys.argv[2].endswith('.txt'):
-        sys.exit("Input has to be a .cnf file")  # Could be updated to run converter and then solver if time permits
-    elif sys.argv[2].endswith('.cnf'):
+    if sys.argv[2].endswith('.cnf') or sys.argv[2].endswith('.txt'):  # for single files
         sudoku = sys.argv[2]  # check sudoku filename
 
         txtwrap = open(sudoku, "r")
@@ -166,10 +195,12 @@ if __name__ == "__main__":
         duration = time_end - time_start
         print("\n Duration: {:.8f}".format(duration))
         run.outfile(sudoku)
-    elif sys.argv[2].startswith('-Folder='):
+        run.outcome(sudoku, heuristic)
+
+    elif sys.argv[2].startswith('-Folder='):  # for folders containing files
         directory = (sys.argv[2].split('='))
         for ind_sudoku in os.listdir(directory[1]):
-            if ind_sudoku.endswith(".cnf"):
+            if ind_sudoku.endswith(".cnf") or ind_sudoku.endswith(".txt"):
                 sudoku = ind_sudoku
                 txtwrap = open(sudoku, "r")
                 dimacs = txtwrap.readlines()
@@ -181,7 +212,8 @@ if __name__ == "__main__":
                 duration = time_end - time_start
                 print("\n Duration: {:.8f}".format(duration))
                 run.outfile(sudoku)
+                run.outcome(sudoku, h)
             else:
-                sys.exit("No more sudokus with .cnf format found")
+                sys.exit("No more sudokus with CNF format found")
     else:
-        sys.exit("Sudoku has to be in .cnf format")
+        sys.exit("Sudoku has to end with either .cnf or .txt, or add a folder")
