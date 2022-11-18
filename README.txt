@@ -3,3 +3,7 @@ python SAT.py -Sn Sudoku_name.cnf \n"
 
 Or input a whole folder with .cnf files: 
 python SAT.py -Sn -Folder=<foldername>
+
+S1 = DPLL
+S2 = 
+S3 =
