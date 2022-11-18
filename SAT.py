@@ -69,12 +69,12 @@ class SolvSAT:
         }
 
         if not os.path.exists(rfile_name):
-            res_file = open(rfile_name, "w")
+            res_file = open(rfile_name, "w", newline="")
             csv_writer = csv.DictWriter(res_file, fieldnames=resdict.keys(), dialect='excel')
             csv_writer.writeheader()
             res_file.close()
 
-        csv_handle = open(rfile_name, "a")
+        csv_handle = open(rfile_name, "a", newline="")
         csv_writer = csv.DictWriter(csv_handle, fieldnames=resdict.keys(), dialect='excel')
         csv_writer.writerow(resdict)
         print("\n Results written to {}".format(os.path.basename(rfile_name)))
@@ -199,7 +199,8 @@ if __name__ == "__main__":
 
     elif sys.argv[2].startswith('-Folder='):  # for folders containing files
         directory = (sys.argv[2].split('='))
-        for ind_sudoku in os.listdir(directory[1]):
+        os.chdir(directory[1])
+        for ind_sudoku in os.listdir():
             if ind_sudoku.endswith(".cnf") or ind_sudoku.endswith(".txt"):
                 sudoku = ind_sudoku
                 txtwrap = open(sudoku, "r")
