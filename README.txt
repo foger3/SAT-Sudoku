@@ -1,4 +1,5 @@
 Run in CMD with the following parameters:
-"\python SAT.py -Sn <filename>"
+python SAT.py -Sn Sudoku_name.cnf \n"
 
-Where -Sn stands for either -S1 (default DPLL), -S2 () or -S3()
+Or input a whole folder with .cnf files: 
+python SAT.py -Sn -Folder=<foldername>
