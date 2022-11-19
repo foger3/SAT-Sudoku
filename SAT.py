@@ -47,19 +47,12 @@ class SolvSAT:
             exp_file.close()
             print("\n Solution written to {}".format(os.path.basename(filename)))
 
-    def outcome(self, name, heur):
-        if heur == "-S1" or "-s1":
-            heurname = "DPLL"
-        elif heur == "-S2" or "-s2":
-            heurname = "Unknown"
-        elif heur == "-S2" or "-s2":
-            heurname = "Unknown"
-
+    def outcome(self, name, heurname):  # creates the .cvs results file
         if sys.argv[2].endswith('.cnf') or sys.argv[2].endswith('.txt'):
-            rfile_name = (str(name) + "_" + heurname + "_" + "results" + ".csv")
+            rfile_name = (str(name) + "_" + "results" + ".csv")
 
         if sys.argv[2].startswith('-Folder='):
-            rfile_name = (str(directory[1]) + "_" + heurname + "_" + "results" + ".csv")
+            rfile_name = (str(directory[1]) + "_" + "results" + ".csv")
 
         resdict = {
             'filename': name,
@@ -164,23 +157,59 @@ def taut_check(clauselist):
             match = 0
     return updatelist
 
+def JW_OS(x):
+    checkjw1 = lit_JW1(x)
+    return max(checkjw1, key=checkjw1.get)
+
+def lit_JW1(x, weight=2):
+    amount = {}
+    for clause in x:
+        for literal in clause:
+            if literal in amount:
+                amount[literal] += weight ** -len(clause)
+            else:
+                amount[literal] = weight ** -len(clause)
+    return amount
+
+def JW_TS(x):
+    checkjw2 = lit_JW2(x)
+    return max(checkjw2, key=checkjw2.get)
+
+def lit_JW2(x, weight=2):
+    amount = {}
+    for clause in x:
+        for literal in clause:
+            literal = abs(literal)
+            if literal in amount:
+                amount[literal] += weight ** -len(clause)
+            else:
+                amount[literal] = weight ** -len(clause)
+    return amount
+
 if __name__ == "__main__":
     #  Check file parameters
+    heuristic = None
+    h = None
     if len(sys.argv) != 3:
-        sys.exit("Input parameters as follows: python SAT.py -Sn Sudoku_name.cnf \n"
-                 "Or input a whole folder with .cnf files: python SAT.py -Sn -Folder=<foldername>")
+        sys.exit("Input parameters as follows: python SAT.py -Sn <sudokuname>.cnf/.txt \n"
+                 "Or input a folder with .cnf/.txt files: python SAT.py -Sn -Folder=<foldername>")
 
-    heuristic = sys.argv[1]  # check heuristic
-    if heuristic == "-S1" or "-s1":
+    heuristic = str(sys.argv[1])  # check heuristic
+    if heuristic == "-S1":
         h = dpll
+        heurname = "DPLL"
         print("Running default DPLL (random splitting) \n")
-    elif heuristic == "-S2" or "-s2":
-        pass
-    elif heuristic == "-S3" or "-s3":
-        pass
+    elif heuristic == "-S2":
+        h = JW_OS
+        heurname = "JW-OS"
+        print("Running One Sided Jeroslow-Wang \n")
+    elif heuristic == "-S3":
+        h = JW_TS
+        heurname = "JW-TS"
+        print("Running Two Sided Jeroslow-Wang \n")
     else:
-        sys.exit("Input parameters as follows: python SAT.py -Sn Sudoku_name.cnf \n"
-                 "Or input a whole folder with .cnf files: python SAT.py -Sn -Folder=<foldername>")
+        sys.exit("Input parameters as follows: python SAT.py -Sn <sudokuname>.cnf/.txt \n"
+                 "Or input a folder with .cnf/.txt files: python SAT.py -Sn -Folder=<foldername>")
 
     if sys.argv[2].endswith('.cnf') or sys.argv[2].endswith('.txt'):  # for single files
         sudoku = sys.argv[2]  # check sudoku filename
@@ -195,7 +224,7 @@ if __name__ == "__main__":
         duration = time_end - time_start
         print("\n Duration: {:.8f}".format(duration))
         run.outfile(sudoku)
-        run.outcome(sudoku, heuristic)
+        run.outcome(sudoku, heurname)
 
     elif sys.argv[2].startswith('-Folder='):  # for folders containing files
         directory = (sys.argv[2].split('='))
@@ -205,6 +234,7 @@ if __name__ == "__main__":
                 sudoku = ind_sudoku
                 txtwrap = open(sudoku, "r")
                 dimacs = txtwrap.readlines()
+                print("\n Running {}".format(heurname))
                 time_start = time.process_time()
                 run = SolvSAT(dimacs, h)
                 run.start()
@@ -213,8 +243,8 @@ if __name__ == "__main__":
                 duration = time_end - time_start
                 print("\n Duration: {:.8f}".format(duration))
                 run.outfile(sudoku)
-                run.outcome(sudoku, h)
+                run.outcome(sudoku, heurname)
             else:
-                sys.exit("No more sudokus with CNF format found")
+                continue
     else:
         sys.exit("Sudoku has to end with either .cnf or .txt, or add a folder")
