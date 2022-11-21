@@ -1,4 +1,4 @@
-import os, sys, time, random, csv, numpy as np
+import os, sys, time, random, csv, numpy as np, math
 
 class SolvSAT:
     def __init__(self, dimacs, heuristic):
@@ -22,6 +22,7 @@ class SolvSAT:
     def results(self):
         self.clauses = taut_check(self.clauses)
         backtracks.count = 0
+        
         self.solution = backtracks(self.clauses, [], self.heuristic)
         self.backtracking = backtracks.count
         print("# of Backtracks: {}".format(self.backtracking))
@@ -216,15 +217,23 @@ def backtracks(x, found, heuristic):
     x, pure_found = pure_l(x)
     x, unit_found = atom_propagation(x)
     found = found + unit_found + pure_found
+    
     if x == - 1:
         return []
     if not x:
         return found
+    
+    if heuristic == mlv:
+        var = heuristic(x, found)
 
-    var = heuristic(x)
+    else:
+        var = heuristic(x)
+    
     solution = backtracks(bcp(x, var), found + [var], heuristic)
+    
     if not solution:
         solution = backtracks(bcp(x, -var), found + [-var], heuristic)
+        #print('solution', found)
 
     return solution
 
@@ -325,6 +334,129 @@ def lit_JW2(x, weight=2):
                 amount[literal] = weight ** -len(clause)
     return amount
 
+def mlv(x, found):
+    '''Computes n conflicts in sudoku grid if set to true
+    Human heuristic : Use variable that have the minimum legal value to split 
+    aims to mimic common pen and pencil human strategy relying (partly) 
+    on the understanding and knowledge of board spatial coordinates
+    where humans write up the remaining possible values in corners
+    for a particular cell.
+    -------------------
+    Returns : variable to use for splitting
+    '''
+    
+    # get the list of unassigned literals
+    unassigned_literals = []
+    
+    #print(found) # to disregard
+    #print(len(found)) # to disregard
+    
+    for clause in x:
+        for literal in clause:
+            if abs(literal) not in unassigned_literals:
+                unassigned_literals.append(abs(literal))
+                
+    #print(unassigned_literals)
+    #print('Unassigned variable', len(unassigned_literals))
+    
+    nconflicts = dict.fromkeys(unassigned_literals, 0)
+
+    true_literals = [] 
+    false_literals = []
+    
+    for literal in found:
+        if literal > 0:
+            true_literals.append(str(literal))
+        else :
+            false_literals.append(str(literal))
+    
+    #print(true_literals)
+    #print('TRUE ASSIGNMENT', len(true_literals))
+    #print('FALSE ASSIGNMENT', len(false_literals))
+    
+    sudoku_grid = {}
+        
+    ####### for each unassigned literal, change to true #######
+    for var in unassigned_literals:
+        
+        #print('Computing number conflicts:', var)
+
+        ###### compute number of conflicts ######
+        row = str(var)[0] # get literal row in corresponding grid (1-9)
+        column = str(var)[1] # get literal col in corresponding grid (1-9)
+        lit_value = str(var)[2] # get literal value (1-9)
+                            
+        if len([i for i in true_literals if i.startswith(row + column)]) == 1: # if cell already filled
+            #print('CELL ALREADY FILLED', var)
+            count_conflicts = 999
+               
+        else: 
+            # count row conflicts
+            row_conflicts = [i for i in true_literals if (i.endswith(lit_value) & i.startswith(row))]
+            n_row_conflicts = len(row_conflicts)
+            #print('ROW conflicts', row_conflicts, n_row_conflicts)
+                
+            # count col conflicts 
+            col_conflicts = [i for i in true_literals if (i.endswith(column + lit_value))]
+            n_col_conflicts = len(col_conflicts)
+            #print('COL conflicts', col_conflicts, n_col_conflicts)
+    
+            # count box conflicts
+            n_box_conflicts = 0
+                    
+            # determine if duplicates in box limits
+            start_row_box = ((math.ceil(int(row)/3)) - 1) * (3) + 1
+            start_col_box = ((math.ceil(int(column)/3)) - 1) * (3) + 1
+                    
+            #print('GRID BOX START', start_row_box, start_col_box)
+            for neighbors_distance_1 in range(0, 3):
+                for neighbors_distance_2 in range(0, 3):
+                            
+                    neighbor_row = start_row_box + neighbors_distance_1
+                    neighbor_col = start_col_box + neighbors_distance_2
+                                                        
+                    if str(neighbor_row)+str(neighbor_col)+str(lit_value) in true_literals:
+                        n_box_conflicts +=1
+
+            #print('BOX CONFLICTS', var, n_box_conflicts)
+            count_conflicts = len(col_conflicts) + len(row_conflicts) + n_box_conflicts
+            #print('TOTAL CONFLICTS', count_conflicts)
+                    
+        key = row + column
+        
+        if key not in sudoku_grid.keys():
+            sudoku_grid[key] = count_conflicts
+      
+        else :
+            if sudoku_grid[key] == 999:
+                sudoku_grid[key] = count_conflicts
+            else:
+                sudoku_grid[key] += count_conflicts # adds up conflicts for all literal of sames grid cell
+    
+    conflicts_sorted = dict(sorted(sudoku_grid.items(), key=lambda x: x[1]))
+    #print(conflicts_sorted)
+    
+    # if cell already filled, discard from selection
+    final_selection = {key:val for key, val in conflicts_sorted.items() if val != 999}
+
+    min_legal = max(final_selection.values())        
+    all_items_with_min_legal =  [k for k,v in final_selection.items() if v == min_legal]
+    #print(all_items_with_min_legal)
+    
+    variable = random.choice(all_items_with_min_legal)
+    
+    for i in range(1, 10):
+        split_variable = variable + str(i)
+        
+        if  split_variable in str(unassigned_literals):
+            #print('VALID SPLITTING VARIABLE', split_variable)
+            break
+        else :
+            #print('INVALID SPLITTING VARIABLE', split_variable)
+            continue
+
+    return int(split_variable)
+
 if __name__ == "__main__":
     #  Check file parameters
     heuristic = None
@@ -354,6 +486,10 @@ if __name__ == "__main__":
         h = dpll
         heurname = "Random+JW-TS"
         print("Running Collaborative Random+JW-TS")
+    elif heuristic == "-S6":
+        h = mlv
+        heurname = "Minimum legal value"
+        print("Running Minimum Legal Value \n")
     else:
         sys.exit("Input parameters as follows: python SAT.py -Sn <sudokuname>.cnf/.txt \n"
                  "Or input a folder with .cnf/.txt files: python SAT.py -Sn -Folder=<foldername>")
