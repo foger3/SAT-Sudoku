@@ -9,4 +9,4 @@ S2 = JW-OS
 S3 = JW-TS
 S4 = Random + JW-OS
 S5 = Random + JW-TS
-S6 = MVL (minimum legal values)
+S6 = MLV (minimum legal values)
