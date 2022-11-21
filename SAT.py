@@ -31,6 +31,35 @@ class SolvSAT:
         else:
             print("Unsatisfiable!")
 
+    def colab_res(self, heuristic):
+        self.clauses = taut_check(self.clauses)
+        colab_backs.count = 0
+        colab_backs.cocount = 0
+        colab_backs.heur = dpll
+        colab_backsTS.count = 0
+        colab_backsTS.cocount = 0
+        colab_backsTS.heur = dpll
+
+        if heuristic == "-S4":
+            self.solution = colab_backs(self.clauses, [], self.heuristic)
+            self.backtracking = colab_backs.count
+            print("# of Backtracks: {}".format(self.backtracking))
+            if self.solution:  # rearrange solution in a 9x9 Sudoku grid
+                sol = [x for x in sorted(self.solution) if x > 0]
+                print(np.array([int(str(i)[-1]) for i in sol]).reshape(9, 9))
+            else:
+                print("Unsatisfiable!")
+
+        if heuristic == "-S5":
+            self.solution = colab_backsTS(self.clauses, [], self.heuristic)
+            self.backtracking = colab_backsTS.count
+            print("# of Backtracks: {}".format(self.backtracking))
+            if self.solution:  # rearrange solution in a 9x9 Sudoku grid
+                sol = [x for x in sorted(self.solution) if x > 0]
+                print(np.array([int(str(i)[-1]) for i in sol]).reshape(9, 9))
+            else:
+                print("Unsatisfiable!")
+
     def outfile(self, name):  # creates the solution .out file
         if not len(self.solution):
             pass
@@ -71,6 +100,116 @@ class SolvSAT:
         csv_writer = csv.DictWriter(csv_handle, fieldnames=resdict.keys(), dialect='excel')
         csv_writer.writerow(resdict)
         print("\n Results written to {}".format(os.path.basename(rfile_name)))
+
+def colab_backs(x, found, coheuristic):  # Random + JWOS
+    coheuristic = colab_backs.heur
+    colab_backs.count += 1
+    colab_backs.cocount += 1
+    if colab_backs.cocount % 200 == 0:
+        colab_backs.heur = changeheur(coheuristic)
+
+    x, pure_found = pure_l(x)
+    x, unit_found = atom_propagation(x)
+    found = found + unit_found + pure_found
+    if x == - 1:
+        return []
+    if not x:
+        return found
+    var = coheuristic(x)
+
+    if coheuristic == dpll:
+        solution = colab_backs(bcp(x, var), found + [var], coheuristic)
+        if not solution:
+            coheuristic = dpll
+            solution = colab_backs(bcp(x, -var), found + [-var], coheuristic)
+        return solution
+
+    if coheuristic == JW_OS:
+        solution = colabJWOS(bcp(x, var), found + [var], coheuristic)
+        if not solution:
+            coheuristic = JW_OS
+            solution = colabJWOS(bcp(x, -var), found + [-var], coheuristic)
+        return solution
+
+def changeheur(coheuristic):
+    if coheuristic == dpll:
+        coheuristic = JW_OS
+        return coheuristic
+
+    else:
+        coheuristic = dpll
+        return coheuristic
+
+def colabJWOS(x, found, heuristic):
+    x, pure_found = pure_l(x)
+    x, unit_found = atom_propagation(x)
+    found = found + unit_found + pure_found
+    if x == - 1:
+        return []
+    if not x:
+        return found
+
+    var = heuristic(x)
+    solution = colab_backs(bcp(x, var), found + [var], heuristic)
+    if not solution:
+        solution = colab_backs(bcp(x, -var), found + [-var], heuristic)
+
+    return solution
+
+def colab_backsTS(x, found, heuristic):  # Random + JWTS
+    coheuristic = colab_backsTS.heur
+    colab_backsTS.count += 1
+    colab_backsTS.cocount += 1
+    if colab_backsTS.cocount % 200 == 0:
+        colab_backsTS.heur = changeheurTS(coheuristic)
+
+    x, pure_found = pure_l(x)
+    x, unit_found = atom_propagation(x)
+    found = found + unit_found + pure_found
+    if x == - 1:
+        return []
+    if not x:
+        return found
+    var = coheuristic(x)
+
+    if coheuristic == dpll:
+        solution = colab_backsTS(bcp(x, var), found + [var], coheuristic)
+        if not solution:
+            coheuristic = dpll
+            solution = colab_backsTS(bcp(x, -var), found + [-var], coheuristic)
+        return solution
+
+    if coheuristic == JW_TS:
+        solution = colabJWTS(bcp(x, var), found + [var], coheuristic)
+        if not solution:
+            coheuristic = JW_TS
+            solution = colabJWTS(bcp(x, -var), found + [-var], coheuristic)
+        return solution
+
+def changeheurTS(coheuristic):
+    if coheuristic == dpll:
+        coheuristic = JW_TS
+        return coheuristic
+
+    else:
+        coheuristic = dpll
+        return coheuristic
+
+def colabJWTS(x, found, heuristic):
+    x, pure_found = pure_l(x)
+    x, unit_found = atom_propagation(x)
+    found = found + unit_found + pure_found
+    if x == - 1:
+        return []
+    if not x:
+        return found
+
+    var = heuristic(x)
+    solution = colab_backsTS(bcp(x, var), found + [var], heuristic)
+    if not solution:
+        solution = colab_backsTS(bcp(x, -var), found + [-var], heuristic)
+
+    return solution
 
 def backtracks(x, found, heuristic):
     backtracks.count += 1
@@ -207,6 +346,14 @@ if __name__ == "__main__":
         h = JW_TS
         heurname = "JW-TS"
         print("Running Two Sided Jeroslow-Wang \n")
+    elif heuristic == "-S4":
+        h = dpll
+        heurname = "DPLL+JW-OS"
+        print("Running Collaborative DPLL+JW-OS")
+    elif heuristic == "-S5":
+        h = dpll
+        heurname = "DPLL+JW-TS"
+        print("Running Collaborative DPLL+JW-TS")
     else:
         sys.exit("Input parameters as follows: python SAT.py -Sn <sudokuname>.cnf/.txt \n"
                  "Or input a folder with .cnf/.txt files: python SAT.py -Sn -Folder=<foldername>")
@@ -217,14 +364,26 @@ if __name__ == "__main__":
         txtwrap = open(sudoku, "r")
         dimacs = txtwrap.readlines()
         time_start = time.process_time()
-        run = SolvSAT(dimacs, h)
-        run.start()
-        run.results()
-        time_end = time.process_time()
-        duration = time_end - time_start
-        print("\n Duration: {:.8f}".format(duration))
-        run.outfile(sudoku)
-        run.outcome(sudoku, heurname)
+
+        if heuristic == "-S4" or heuristic == "-S5":
+            run = SolvSAT(dimacs, h)
+            run.start()
+            run.colab_res(heuristic)
+            time_end = time.process_time()
+            duration = time_end - time_start
+            print("\n Duration: {:.8f}".format(duration))
+            run.outfile(sudoku)
+            run.outcome(sudoku, heurname)
+
+        else:
+            run = SolvSAT(dimacs, h)
+            run.start()
+            run.results()
+            time_end = time.process_time()
+            duration = time_end - time_start
+            print("\n Duration: {:.8f}".format(duration))
+            run.outfile(sudoku)
+            run.outcome(sudoku, heurname)
 
     elif sys.argv[2].startswith('-Folder='):  # for folders containing files
         directory = (sys.argv[2].split('='))
@@ -236,14 +395,25 @@ if __name__ == "__main__":
                 dimacs = txtwrap.readlines()
                 print("\n Running {}".format(heurname))
                 time_start = time.process_time()
-                run = SolvSAT(dimacs, h)
-                run.start()
-                run.results()
-                time_end = time.process_time()
-                duration = time_end - time_start
-                print("\n Duration: {:.8f}".format(duration))
-                run.outfile(sudoku)
-                run.outcome(sudoku, heurname)
+                if heuristic == "-S4" or heuristic == "-S5":
+                    run = SolvSAT(dimacs, h)
+                    run.start()
+                    run.colab_res(heuristic)
+                    time_end = time.process_time()
+                    duration = time_end - time_start
+                    print("\n Duration: {:.8f}".format(duration))
+                    run.outfile(sudoku)
+                    run.outcome(sudoku, heurname)
+
+                else:
+                    run = SolvSAT(dimacs, h)
+                    run.start()
+                    run.results()
+                    time_end = time.process_time()
+                    duration = time_end - time_start
+                    print("\n Duration: {:.8f}".format(duration))
+                    run.outfile(sudoku)
+                    run.outcome(sudoku, heurname)
             else:
                 continue
     else:
