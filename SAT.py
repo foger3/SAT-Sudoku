@@ -11,7 +11,7 @@ class SolvSAT:
 
     def start(self):
         for string in self.dimacs:
-            if string.startswith("p"):
+            if string.startswith("p") or string.startswith('.c'):
                 continue
             clauses = [int(x) for x in string[:-2].split()]
             for i in clauses:
