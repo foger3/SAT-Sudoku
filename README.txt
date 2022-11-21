@@ -7,3 +7,5 @@ python SAT.py -Sn -Folder=<foldername>
 S1 = DPLL
 S2 = JW-OS
 S3 = JW-TS
+S4 = DPLL + JW-OS
+S5 = DPLL + JW-TS
