@@ -336,7 +336,7 @@ if __name__ == "__main__":
     heuristic = str(sys.argv[1])  # check heuristic
     if heuristic == "-S1":
         h = dpll
-        heurname = "DPLL"
+        heurname = "DPLL-Default"
         print("Running default DPLL (random splitting) \n")
     elif heuristic == "-S2":
         h = JW_OS
@@ -348,12 +348,12 @@ if __name__ == "__main__":
         print("Running Two Sided Jeroslow-Wang \n")
     elif heuristic == "-S4":
         h = dpll
-        heurname = "DPLL+JW-OS"
-        print("Running Collaborative DPLL+JW-OS")
+        heurname = "Random+JW-OS"
+        print("Running Collaborative Random+JW-OS")
     elif heuristic == "-S5":
         h = dpll
-        heurname = "DPLL+JW-TS"
-        print("Running Collaborative DPLL+JW-TS")
+        heurname = "Random+JW-TS"
+        print("Running Collaborative Random+JW-TS")
     else:
         sys.exit("Input parameters as follows: python SAT.py -Sn <sudokuname>.cnf/.txt \n"
                  "Or input a folder with .cnf/.txt files: python SAT.py -Sn -Folder=<foldername>")
