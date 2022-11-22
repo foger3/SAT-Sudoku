@@ -1,8 +1,6 @@
-import pandas as pd
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
+import pandas as pd, numpy as np, seaborn as sns, matplotlib.pyplot as plt
 from statannot import add_stat_annotation
+import scipy
 import os
 
 if not os.path.isdir("figures_paper/"):
@@ -70,17 +68,17 @@ def boxplot(data, performance_measure):
     plt.yticks(fontsize = 30)
     plt.xlabel('Heuristic', fontsize = 40)
     plt.ylabel(performance_measure, fontsize = 40)
-    if performance_measure == 'duration':
-        plt.ylim((0, 20))
-    elif performance_measure == 'backtracks':
-        plt.ylim((0, 5000))
-    # annotate with statistical testing
-    # add_stat_annotation(ax, data=data, x='heuristic', y=performance_measure, order=order,
-                    #box_pairs=[("DPLL", "JW-OS"), ("DPLL", "JW-TS"), ("DPLL+JW-OS", "DPLL"),
-                    #           ("DPLL+JW-TS", "DPLL"), ("DPLL", "MLV"), ("DPLL", "JW-OS+MLV"),
-                    #           ("DPLL", "JW-OS+MLV"), ("DPLL", "JW-OS+MLV"), ("DPLL", "JW-OS+MLV"),("DPLL", "JW-TS+MLV"), 
-                    #           ("DPLL", "Random+MLV")],
-                    #test='Mann-Whitney', text_format='full', loc='inside', verbose=2)
+    #if performance_measure == 'duration':
+    #    plt.ylim((0, 20))
+    #elif performance_measure == 'backtracks':
+    #    plt.ylim((0, 5000))
+    #annotate with statistical testing
+    add_stat_annotation(ax, data=data, x='heuristic', y=performance_measure, order=order,
+                    box_pairs=[("DPLL", "JW-OS"), ("DPLL", "JW-TS"), ("DPLL+JW-OS", "DPLL"),
+                               ("DPLL+JW-TS", "DPLL"), ("DPLL", "MLV"), ("DPLL", "JW-OS+MLV"),
+                               ("DPLL", "JW-OS+MLV"), ("DPLL", "JW-OS+MLV"), ("DPLL", "JW-OS+MLV"),("DPLL", "JW-TS+MLV"), 
+                               ("DPLL", "Random+MLV")],
+                    test='Wilcoxon', text_format='full', loc='inside', verbose=2)
     
 
     f.savefig(f'figures_paper/boxplot_{performance_measure}_statsannotation_MW')
@@ -102,8 +100,34 @@ def frequency_plot(data, performance_measure):
     f.savefig(f'figures_paper/frequencyplot_{performance_measure}')
     return
 
-
 # Statistics 
+# Wilcoxon test
+heuristics = results.heuristic.unique()
+compared_heuristics = []
+pvals = []
+stats = []
+
+for heuristic_1 in heuristics:
+    for heuristic_2 in heuristics:
+        if heuristic_1 != heuristic_2:
+            res = scipy.stats.wilcoxon(results.loc[results.heuristic == heuristic_1].backtracks,
+                                 results.loc[results.heuristic == heuristic_2].backtracks, 
+                                 zero_method='wilcox', 
+                                 correction=False, 
+                                 alternative='two-sided', 
+                                 method='auto')
+            compared_heuristics.append(heuristic_1 +'&' + heuristic_2)
+            pvals.append(res.pvalue)
+            stats.append(res.statistic)
+
+stats = pd.DataFrame({'compared_heuristics': compared_heuristics, 
+                     'pvalue': pvals, 
+                     'statistic' : stats})
+
+# save statistics
+stats.to_csv('Statistics_Wilcoxon_backtracks.csv')
+
+
 boxplot(results, 'backtracks')
 boxplot(results, 'duration')
 frequency_plot(results, 'backtracks')
