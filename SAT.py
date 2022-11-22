@@ -34,12 +34,21 @@ class SolvSAT:
 
     def colab_res(self, heuristic):
         self.clauses = taut_check(self.clauses)
-        colab_backs.count = 0
+        colab_backs.count = 0  # random + JW-OS
         colab_backs.cocount = 0
         colab_backs.heur = dpll
-        colab_backsTS.count = 0
+        colab_backsTS.count = 0  # random + JW-TS
         colab_backsTS.cocount = 0
         colab_backsTS.heur = dpll
+        colab_backsMLV1.count = 0  # random + MLV
+        colab_backsMLV1.cocount = 0
+        colab_backsMLV1.heur = dpll
+        colab_backsMLV2.count = 0  # JW-OS + MLV
+        colab_backsMLV2.cocount = 0
+        colab_backsMLV2.heur = JW_OS
+        colab_backsMLV3.count = 0  # JW-TS + MLV
+        colab_backsMLV3.cocount = 0
+        colab_backsMLV3.heur = JW_TS
 
         if heuristic == "-S4":
             self.solution = colab_backs(self.clauses, [], self.heuristic)
@@ -54,6 +63,36 @@ class SolvSAT:
         if heuristic == "-S5":
             self.solution = colab_backsTS(self.clauses, [], self.heuristic)
             self.backtracking = colab_backsTS.count
+            print("# of Backtracks: {}".format(self.backtracking))
+            if self.solution:  # rearrange solution in a 9x9 Sudoku grid
+                sol = [x for x in sorted(self.solution) if x > 0]
+                print(np.array([int(str(i)[-1]) for i in sol]).reshape(9, 9))
+            else:
+                print("Unsatisfiable!")
+
+        if heuristic == "-S7":
+            self.solution = colab_backsMLV1(self.clauses, [], self.heuristic)
+            self.backtracking = colab_backsMLV1.count
+            print("# of Backtracks: {}".format(self.backtracking))
+            if self.solution:  # rearrange solution in a 9x9 Sudoku grid
+                sol = [x for x in sorted(self.solution) if x > 0]
+                print(np.array([int(str(i)[-1]) for i in sol]).reshape(9, 9))
+            else:
+                print("Unsatisfiable!")
+
+        if heuristic == "-S8":
+            self.solution = colab_backsMLV2(self.clauses, [], self.heuristic)
+            self.backtracking = colab_backsMLV2.count
+            print("# of Backtracks: {}".format(self.backtracking))
+            if self.solution:  # rearrange solution in a 9x9 Sudoku grid
+                sol = [x for x in sorted(self.solution) if x > 0]
+                print(np.array([int(str(i)[-1]) for i in sol]).reshape(9, 9))
+            else:
+                print("Unsatisfiable!")
+
+        if heuristic == "-S9":
+            self.solution = colab_backsMLV3(self.clauses, [], self.heuristic)
+            self.backtracking = colab_backsMLV3.count
             print("# of Backtracks: {}".format(self.backtracking))
             if self.solution:  # rearrange solution in a 9x9 Sudoku grid
                 sol = [x for x in sorted(self.solution) if x > 0]
@@ -209,6 +248,197 @@ def colabJWTS(x, found, heuristic):
     solution = colab_backsTS(bcp(x, var), found + [var], heuristic)
     if not solution:
         solution = colab_backsTS(bcp(x, -var), found + [-var], heuristic)
+
+    return solution
+
+def colab_backsMLV1(x, found, heuristic):  # Random + MLV
+    coheuristic = colab_backsMLV1.heur
+    colab_backsMLV1.count += 1
+    colab_backsMLV1.cocount += 1
+    if colab_backsMLV1.cocount % 200 == 0:
+        colab_backsMLV1.heur = changeheurMLV1(coheuristic)
+
+    x, pure_found = pure_l(x)
+    x, unit_found = atom_propagation(x)
+    found = found + unit_found + pure_found
+    if x == - 1:
+        return []
+    if not x:
+        return found
+
+    if heuristic == mlv:
+        var = heuristic(x, found)
+    else:
+        var = heuristic(x)
+
+    if coheuristic == dpll:
+        solution = colab_backsMLV1(bcp(x, var), found + [var], coheuristic)
+        if not solution:
+            coheuristic = dpll
+            solution = colab_backsMLV1(bcp(x, -var), found + [-var], coheuristic)
+        return solution
+
+    if coheuristic == mlv:
+        solution = colabMLV1(bcp(x, var), found + [var], coheuristic)
+        if not solution:
+            coheuristic = mlv
+            solution = colabMLV1(bcp(x, -var), found + [-var], coheuristic)
+        return solution
+
+def changeheurMLV1(coheuristic):
+    if coheuristic == dpll:
+        coheuristic = mlv
+        return coheuristic
+
+    else:
+        coheuristic = dpll
+        return coheuristic
+
+def colabMLV1(x, found, heuristic):
+    x, pure_found = pure_l(x)
+    x, unit_found = atom_propagation(x)
+    found = found + unit_found + pure_found
+    if x == - 1:
+        return []
+    if not x:
+        return found
+
+    if heuristic == mlv:
+        var = heuristic(x, found)
+    else:
+        var = heuristic(x)
+
+    solution = colab_backsMLV1(bcp(x, var), found + [var], heuristic)
+    if not solution:
+        solution = colab_backsMLV1(bcp(x, -var), found + [-var], heuristic)
+
+    return solution
+
+def colab_backsMLV2(x, found, heuristic):  # JW-OS + MLV
+    coheuristic = colab_backsMLV2.heur
+    colab_backsMLV2.count += 1
+    colab_backsMLV2.cocount += 1
+    if colab_backsMLV2.cocount % 200 == 0:
+        colab_backsMLV2.heur = changeheurMLV2(coheuristic)
+
+    x, pure_found = pure_l(x)
+    x, unit_found = atom_propagation(x)
+    found = found + unit_found + pure_found
+    if x == - 1:
+        return []
+    if not x:
+        return found
+
+    if heuristic == mlv:
+        var = heuristic(x, found)
+    else:
+        var = heuristic(x)
+
+    if coheuristic == JW_OS:
+        solution = colab_backsMLV2(bcp(x, var), found + [var], coheuristic)
+        if not solution:
+            coheuristic = JW_OS
+            solution = colab_backsMLV2(bcp(x, -var), found + [-var], coheuristic)
+        return solution
+
+    if coheuristic == mlv:
+        solution = colabMLV2(bcp(x, var), found + [var], coheuristic)
+        if not solution:
+            coheuristic = mlv
+            solution = colabMLV2(bcp(x, -var), found + [-var], coheuristic)
+        return solution
+
+def changeheurMLV2(coheuristic):
+    if coheuristic == JW_OS:
+        coheuristic = mlv
+        return coheuristic
+
+    else:
+        coheuristic = JW_OS
+        return coheuristic
+
+def colabMLV2(x, found, heuristic):
+    x, pure_found = pure_l(x)
+    x, unit_found = atom_propagation(x)
+    found = found + unit_found + pure_found
+    if x == - 1:
+        return []
+    if not x:
+        return found
+
+    if heuristic == mlv:
+        var = heuristic(x, found)
+    else:
+        var = heuristic(x)
+
+    solution = colab_backsMLV2(bcp(x, var), found + [var], heuristic)
+    if not solution:
+        solution = colab_backsMLV2(bcp(x, -var), found + [-var], heuristic)
+
+    return solution
+
+def colab_backsMLV3(x, found, heuristic):  # JW-TS + MLV
+    coheuristic = colab_backsMLV3.heur
+    print(coheuristic)
+    colab_backsMLV3.count += 1
+    print(colab_backsMLV3.count)
+    colab_backsMLV3.cocount += 1
+    if colab_backsMLV3.cocount % 200 == 0:
+        colab_backsMLV3.heur = changeheurMLV3(coheuristic)
+
+    x, pure_found = pure_l(x)
+    x, unit_found = atom_propagation(x)
+    found = found + unit_found + pure_found
+    if x == - 1:
+        return []
+    if not x:
+        return found
+
+    if heuristic == mlv:
+        var = heuristic(x, found)
+    else:
+        var = heuristic(x)
+
+    if coheuristic == JW_TS:
+        solution = colab_backsMLV3(bcp(x, var), found + [var], coheuristic)
+        if not solution:
+            coheuristic = JW_TS
+            solution = colab_backsMLV3(bcp(x, -var), found + [-var], coheuristic)
+        return solution
+
+    if coheuristic == mlv:
+        solution = colabMLV3(bcp(x, var), found + [var], coheuristic)
+        if not solution:
+            coheuristic = mlv
+            solution = colabMLV3(bcp(x, -var), found + [-var], coheuristic)
+        return solution
+
+def changeheurMLV3(coheuristic):
+    if coheuristic == JW_TS:
+        coheuristic = mlv
+        return coheuristic
+
+    else:
+        coheuristic = JW_TS
+        return coheuristic
+
+def colabMLV3(x, found, heuristic):
+    x, pure_found = pure_l(x)
+    x, unit_found = atom_propagation(x)
+    found = found + unit_found + pure_found
+    if x == - 1:
+        return []
+    if not x:
+        return found
+
+    if heuristic == mlv:
+        var = heuristic(x, found)
+    else:
+        var = heuristic(x)
+
+    solution = colab_backsMLV3(bcp(x, var), found + [var], heuristic)
+    if not solution:
+        solution = colab_backsMLV3(bcp(x, -var), found + [-var], heuristic)
 
     return solution
 
@@ -463,15 +693,27 @@ if __name__ == "__main__":
     elif heuristic == "-S4":
         h = dpll
         heurname = "Random+JW-OS"
-        print("Running Collaborative Random+JW-OS")
+        print("Running Collaborative Random+JW-OS \n")
     elif heuristic == "-S5":
         h = dpll
         heurname = "Random+JW-TS"
-        print("Running Collaborative Random+JW-TS")
+        print("Running Collaborative Random+JW-TS \n")
     elif heuristic == "-S6":
         h = mlv
-        heurname = "Minimum legal value"
+        heurname = "MLV"
         print("Running Minimum Legal Value \n")
+    elif heuristic == "-S7":
+        h = dpll
+        heurname = "Random+MLV"
+        print("Running Collaborative Random+MLV \n")
+    elif heuristic == "-S8":
+        h = JW_OS
+        heurname = "JW-OS+MLV"
+        print("Running Collaborative JW-OS+MLV \n")
+    elif heuristic == "-S9":
+        h = JW_TS
+        heurname = "JW-TS+MLV"
+        print("Running Collaborative JW-TS+MLV \n")
     else:
         sys.exit("Input parameters as follows: python SAT.py -Sn <sudokuname>.cnf/.txt \n"
                  "Or input a folder with .cnf/.txt files: python SAT.py -Sn -Folder=<foldername>")
@@ -483,7 +725,7 @@ if __name__ == "__main__":
         dimacs = txtwrap.readlines()
         time_start = time.process_time()
 
-        if heuristic == "-S4" or heuristic == "-S5":
+        if heuristic == "-S4" or heuristic == "-S5" or heuristic == "-S7" or heuristic == "-S8" or heuristic == "-S9":
             run = SolvSAT(dimacs, h)
             run.start()
             run.colab_res(heuristic)
@@ -513,7 +755,7 @@ if __name__ == "__main__":
                 dimacs = txtwrap.readlines()
                 print("\n Running {}".format(heurname))
                 time_start = time.process_time()
-                if heuristic == "-S4" or heuristic == "-S5":
+                if heuristic == "-S4" or heuristic == "-S5" or heuristic == "-S7" or heuristic == "-S8" or heuristic == "-S9":
                     run = SolvSAT(dimacs, h)
                     run.start()
                     run.colab_res(heuristic)
