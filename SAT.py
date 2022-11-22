@@ -379,9 +379,7 @@ def colabMLV2(x, found, heuristic):
 
 def colab_backsMLV3(x, found, heuristic):  # JW-TS + MLV
     coheuristic = colab_backsMLV3.heur
-    print(coheuristic)
     colab_backsMLV3.count += 1
-    print(colab_backsMLV3.count)
     colab_backsMLV3.cocount += 1
     if colab_backsMLV3.cocount % 200 == 0:
         colab_backsMLV3.heur = changeheurMLV3(coheuristic)
