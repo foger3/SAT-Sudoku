@@ -2,7 +2,7 @@ Run in CMD with the following parameters:
 \python SAT.py -Sn Sudoku_name
 
 For instance, if you want to run heuristic 3 on "sudoku1.cnf", put the following in CMD:
-"python SAT.py -S3 Sudoku1.cnf"
+"python SAT.py -S3 sudoku1.cnf"
 
 Or input a whole folder with .cnf files: 
 \python SAT.py -Sn -Folder=foldername
