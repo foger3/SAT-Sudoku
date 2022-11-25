@@ -145,7 +145,7 @@ def colab_backs(x, found, coheuristic):  # Random + JWOS
     coheuristic = colab_backs.heur
     colab_backs.count += 1
     colab_backs.cocount += 1
-    if colab_backs.cocount % 200 == 0:
+    if colab_backs.cocount % 50 == 0:
         colab_backs.heur = changeheur(coheuristic)
 
     x, pure_found = pure_l(x)
@@ -200,7 +200,7 @@ def colab_backsTS(x, found, heuristic):  # Random + JWTS
     coheuristic = colab_backsTS.heur
     colab_backsTS.count += 1
     colab_backsTS.cocount += 1
-    if colab_backsTS.cocount % 200 == 0:
+    if colab_backsTS.cocount % 50 == 0:
         colab_backsTS.heur = changeheurTS(coheuristic)
 
     x, pure_found = pure_l(x)
@@ -255,7 +255,7 @@ def colab_backsMLV1(x, found, heuristic):  # Random + MLV
     coheuristic = colab_backsMLV1.heur
     colab_backsMLV1.count += 1
     colab_backsMLV1.cocount += 1
-    if colab_backsMLV1.cocount % 200 == 0:
+    if colab_backsMLV1.cocount % 50 == 0:
         colab_backsMLV1.heur = changeheurMLV1(coheuristic)
 
     x, pure_found = pure_l(x)
@@ -318,7 +318,7 @@ def colab_backsMLV2(x, found, heuristic):  # JW-OS + MLV
     coheuristic = colab_backsMLV2.heur
     colab_backsMLV2.count += 1
     colab_backsMLV2.cocount += 1
-    if colab_backsMLV2.cocount % 200 == 0:
+    if colab_backsMLV2.cocount % 50 == 0:
         colab_backsMLV2.heur = changeheurMLV2(coheuristic)
 
     x, pure_found = pure_l(x)
@@ -381,7 +381,7 @@ def colab_backsMLV3(x, found, heuristic):  # JW-TS + MLV
     coheuristic = colab_backsMLV3.heur
     colab_backsMLV3.count += 1
     colab_backsMLV3.cocount += 1
-    if colab_backsMLV3.cocount % 200 == 0:
+    if colab_backsMLV3.cocount % 50 == 0:
         colab_backsMLV3.heur = changeheurMLV3(coheuristic)
 
     x, pure_found = pure_l(x)
