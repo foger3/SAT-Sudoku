@@ -1,3 +1,5 @@
+SAT-Solver for Sudokus using Propositional Logic
+
 Run in CMD with the following parameters:
 \python SAT.py -Sn Sudoku_name
 
